@@ -1,0 +1,9 @@
+services:
+  - type: worker
+    name: bsk-bot
+    runtime: python
+    buildCommand: ""
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 7284877871:AAGTXfc62DGC7s14qeqkMiLFJsIrSeDPLGs
