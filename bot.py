@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from flask import Flask
 import threading
+import aiohttp
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -12,14 +13,14 @@ logging.basicConfig(
 BOT_TOKEN = "7284877871:AAGTXfc62DGC7s14qeqkMiLFJsIrSeDPLGs"
 
 # Flask app for health check
-app = Flask(__name__)
+flask_app = Flask(__name__)
 
-@app.route('/health')
+@flask_app.route('/health')
 def health():
     return "OK", 200
 
 def run_flask():
-    app.run(host="0.0.0.0", port=5000)
+    flask_app.run(host="0.0.0.0", port=5000)
 
 # Telegram bot handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -28,18 +29,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     product_code = update.message.text.strip()
     extensions = ['jpg', 'png', 'webp']
-    for ext in extensions:
-        url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}"
-        try:
-            await update.message.reply_photo(photo=url)
-            return
-        except Exception:
-            continue
+    
+    async with aiohttp.ClientSession() as session:
+        for ext in extensions:
+            url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}"
+            try:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        await update.message.reply_photo(photo=url)
+                        return
+            except Exception:
+                continue
+
     await update.message.reply_text("Görsel bulunamadı.")
 
 if __name__ == "__main__":
     # Start Flask in separate thread
-    threading.Thread(target=run_flask).start()
+    threading.Thread(target=run_flask, daemon=True).start()
 
     # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
