@@ -1,10 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-# Bot Token'ını buraya girin
 BOT_TOKEN = '7284877871:AAGTXfc62DGC7s14qeqkMiLFJsIrSeDPLGs'
-
-# Görsel URL yapısı
 IMAGE_BASE_URL = "https://bskhavalandirma.neocities.org/images/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
