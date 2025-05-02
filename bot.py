@@ -4,6 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 from flask import Flask
 import threading
 import aiohttp
+import time
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,10 +30,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     product_code = update.message.text.strip()
     extensions = ['jpg', 'png', 'webp']
+    timestamp = int(time.time())  # cache'i kırmak için
     
     async with aiohttp.ClientSession() as session:
         for ext in extensions:
-            url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}"
+            url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}?v={timestamp}"
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
