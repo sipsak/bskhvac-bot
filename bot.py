@@ -1,6 +1,8 @@
 import logging
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from flask import Flask
+import threading
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -9,6 +11,17 @@ logging.basicConfig(
 
 BOT_TOKEN = "7284877871:AAGTXfc62DGC7s14qeqkMiLFJsIrSeDPLGs"
 
+# Flask app for health check
+app = Flask(__name__)
+
+@app.route('/health')
+def health():
+    return "OK", 200
+
+def run_flask():
+    app.run(host="0.0.0.0", port=5000)
+
+# Telegram bot handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Ürün kodunu gönder, sana görselini göndereyim.")
 
@@ -17,14 +30,20 @@ async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extensions = ['jpg', 'png', 'webp']
     for ext in extensions:
         url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}"
-        await update.message.reply_photo(photo=url)
-        return
+        try:
+            await update.message.reply_photo(photo=url)
+            return
+        except Exception:
+            continue
     await update.message.reply_text("Görsel bulunamadı.")
 
 if __name__ == "__main__":
+    # Start Flask in separate thread
+    threading.Thread(target=run_flask).start()
+
+    # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler(None, get_image))  # Her mesajı işle
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_image))
 
     app.run_polling()
