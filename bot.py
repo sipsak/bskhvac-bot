@@ -32,9 +32,12 @@ async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extensions = ['jpg', 'png', 'webp']
     timestamp = int(time.time())  # cache'i kırmak için
     
+    # URL'ye zaman damgası ekleniyor
+    url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}?v={timestamp}"
+
     async with aiohttp.ClientSession() as session:
         for ext in extensions:
-            url = f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}?v={timestamp}"
+            url = url_with_cache_buster(ext)
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
