@@ -11,7 +11,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-BOT_TOKEN = "7284877871:AAGTXfc62DGC7s14qeqkMiLFJsIrSeDPLGs"
+BOT_TOKEN = "7284877871:AAGJbVk84nx0USRv8g1cICiRrb4pWbWlaBI"
 
 # Flask app for health check
 flask_app = Flask(__name__)
