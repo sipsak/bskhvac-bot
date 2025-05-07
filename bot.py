@@ -6,9 +6,8 @@ import threading
 import aiohttp
 import time
 import os
-import cv2
-import numpy as np
-from pyzbar.pyzbar import decode
+from PIL import Image
+import zxing  # Changed from pyzbar to zxing
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -48,43 +47,6 @@ async def get_image_by_code(update: Update, code: str):
 
     await update.message.reply_text("Görsel bulunamadı.")
 
-def preprocess_image_for_barcode(image_path):
-    """
-    Barkod/QR kod okuma performansını artırmak için görüntüyü ön işlemden geçirir.
-    """
-    # Görüntüyü oku
-    image = cv2.imread(image_path)
-    if image is None:
-        return None
-    
-    # Gri tonlamaya çevir
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Görüntüyü iyileştirme denemeleri
-    processed_images = []
-    
-    # 1. Orijinal gri tonlamalı görüntü
-    processed_images.append(gray)
-    
-    # 2. Gauss bulanıklaştırma
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    processed_images.append(blurred)
-    
-    # 3. Kontrastı artır
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced = clahe.apply(gray)
-    processed_images.append(enhanced)
-    
-    # 4. Threshold uygulama
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    processed_images.append(thresh)
-    
-    # 5. Adaptif threshold
-    adaptive_thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-    processed_images.append(adaptive_thresh)
-    
-    return processed_images
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text:
         code = update.message.text.strip()
@@ -97,29 +59,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await photo_file.download_to_drive(photo_path)
 
         try:
-            # Görüntüyü ön işlemden geçir
-            processed_images = preprocess_image_for_barcode(photo_path)
+            # Create a ZXing reader
+            reader = zxing.BarCodeReader()
             
-            if not processed_images:
-                await update.message.reply_text("Görsel işlenemedi.")
-                return
+            # Decode the image
+            barcode = reader.decode(photo_path)
             
-            # Tüm işlenmiş görüntülerde barkod/QR kod ara
-            for img in processed_images:
-                decoded_objects = decode(img)
+            if barcode and barcode.parsed:
+                code = barcode.parsed
+                await get_image_by_code(update, code)
+            else:
+                await update.message.reply_text("Barkod/QR kod okunamadı.")
                 
-                if decoded_objects:
-                    code = decoded_objects[0].data.decode("utf-8")
-                    logging.info(f"Barkod başarıyla okundu: {code}")
-                    await get_image_by_code(update, code)
-                    return
-            
-            # Hiçbir işleme yönteminde barkod bulunamadıysa
-            await update.message.reply_text("Barkod/QR kod okunamadı. Lütfen daha net bir fotoğraf çekmeyi deneyin.")
-            
         except Exception as e:
             logging.exception("Barkod çözümleme hatası")
-            await update.message.reply_text("Görsel işlenemedi. Lütfen başka bir fotoğraf deneyin.")
+            await update.message.reply_text("Görsel işlenemedi.")
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
