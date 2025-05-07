@@ -7,7 +7,7 @@ import aiohttp
 import time
 import os
 from PIL import Image
-import zxing  # Changed from pyzbar to zxing
+import easyzxing
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -53,24 +53,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await get_image_by_code(update, code)
 
     elif update.message.photo:
-        photo = update.message.photo[-1]  # En yüksek çözünürlüklü olanı al
+        photo = update.message.photo[-1]
         photo_file = await photo.get_file()
         photo_path = "/tmp/barkod.jpg"
         await photo_file.download_to_drive(photo_path)
 
         try:
-            # Create a ZXing reader
-            reader = zxing.BarCodeReader()
-            
-            # Decode the image
-            barcode = reader.decode(photo_path)
-            
-            if barcode and barcode.parsed:
-                code = barcode.parsed
-                await get_image_by_code(update, code)
-            else:
+            reader = easyzxing.EasyZxing()
+            result = reader.decode(photo_path)
+
+            if not result or not result.text:
                 await update.message.reply_text("Barkod/QR kod okunamadı.")
-                
+                return
+
+            code = result.text.strip()
+            await get_image_by_code(update, code)
+
         except Exception as e:
             logging.exception("Barkod çözümleme hatası")
             await update.message.reply_text("Görsel işlenemedi.")
