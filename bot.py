@@ -34,15 +34,21 @@ async def get_image_by_code(update: Update, code: str):
     timestamp = int(time.time())
     url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{code}.{ext}?v={timestamp}"
 
-    async with aiohttp.ClientSession() as session:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; bskhvac-bot/1.0)"
+    }
+
+    async with aiohttp.ClientSession(headers=headers) as session:
         for ext in extensions:
             url = url_with_cache_buster(ext)
+            logging.info(f"Denetlenen URL: {url}")
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         await update.message.reply_photo(photo=url)
                         return
-            except Exception:
+            except Exception as e:
+                logging.warning(f"{url} adresine erişilemedi: {e}")
                 continue
 
     await update.message.reply_text("Görsel bulunamadı.")
