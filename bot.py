@@ -6,6 +6,8 @@ import threading
 import aiohttp
 import time
 import os
+from PIL import Image
+from pyzbar.pyzbar import decode
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -24,17 +26,13 @@ def health():
 def run_flask():
     flask_app.run(host="0.0.0.0", port=5000)
 
-# Telegram bot handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Ürün kodunu gönder, sana görselini göndereyim.")
+    await update.message.reply_text("Ürün kodunu ya da barkod görselini gönder, sana görselini göndereyim.")
 
-async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    product_code = update.message.text.strip()
+async def get_image_by_code(update: Update, code: str):
     extensions = ['jpg', 'png', 'webp']
-    timestamp = int(time.time())  # cache'i kırmak için
-    
-    # URL'ye zaman damgası ekleniyor
-    url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{product_code}.{ext}?v={timestamp}"
+    timestamp = int(time.time())
+    url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{code}.{ext}?v={timestamp}"
 
     async with aiohttp.ClientSession() as session:
         for ext in extensions:
@@ -49,13 +47,37 @@ async def get_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Görsel bulunamadı.")
 
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.text:
+        code = update.message.text.strip()
+        await get_image_by_code(update, code)
+
+    elif update.message.photo:
+        photo = update.message.photo[-1]  # En yüksek çözünürlüklü olanı al
+        photo_file = await photo.get_file()
+        photo_path = "/tmp/barkod.jpg"
+        await photo_file.download_to_drive(photo_path)
+
+        try:
+            img = Image.open(photo_path)
+            decoded_objects = decode(img)
+
+            if not decoded_objects:
+                await update.message.reply_text("Barkod/QR kod okunamadı.")
+                return
+
+            code = decoded_objects[0].data.decode("utf-8")
+            await get_image_by_code(update, code)
+
+        except Exception as e:
+            logging.exception("Barkod çözümleme hatası")
+            await update.message.reply_text("Görsel işlenemedi.")
+
 if __name__ == "__main__":
-    # Start Flask in separate thread
     threading.Thread(target=run_flask, daemon=True).start()
 
-    # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_image))
+    app.add_handler(MessageHandler(filters.ALL, handle_message))
 
     app.run_polling()
