@@ -73,15 +73,16 @@ async def decode_barcode_with_zxing(image_path):
             return None
 
         output = result.stdout.decode("utf-8").strip()
-        logging.info(f"ZXing çıktı: {output}")
+        logging.info(f"ZXing çıktı:\n{output}")
+        
+        lines = output.splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "Raw result:" and i + 1 < len(lines):
+                decoded = lines[i + 1].strip()
+                logging.info(f"Çözümlenen ürün kodu: {decoded}")
+                return decoded
 
-        # Buradaki satır, QR kodu çıktılarını kontrol ediyor.
-        # Çıktının başındaki 'file://' kısmını kaldırıyoruz.
-        decoded_code = output.splitlines()[0] if output else None
-        if decoded_code and decoded_code.startswith("file://"):
-            decoded_code = decoded_code.replace("file://", "")
-
-        return decoded_code
+        return None
 
     except Exception as e:
         logging.exception("ZXing çalıştırılırken hata oluştu")
