@@ -52,8 +52,12 @@ async def decode_barcode_with_zxing(image_path: str) -> str | None:
             ["java", "-cp", "zxing.jar", "com.google.zxing.client.j2se.CommandLineRunner", image_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=5
         )
+        
+        if result.returncode != 0:
+        logging.error(f"ZXing hata kodu: {result.returncode}")
+        logging.error(f"stderr: {result.stderr.decode('utf-8')}")
+        
         output = result.stdout.decode("utf-8")
         lines = output.splitlines()
         if lines:
