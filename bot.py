@@ -6,8 +6,8 @@ import threading
 import aiohttp
 import time
 import os
-from PIL import Image
-from pyzbar.pyzbar import decode
+from pyzxing import BarCodeReader
+import io
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,10 +27,10 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5000)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Ürün kodunu ya da barkod görselini gönder, sana görselini göndereyim.")
+    await update.message.reply_text("Ürün kodunu veya ürün barkodunun fotoğrafını çekip gönderirsen sana görselini gönderebilirim.")
 
 async def get_image_by_code(update: Update, code: str):
-    extensions = ['jpg', 'png', 'webp']
+    extensions = ['jpg', 'jpeg', 'png', 'webp', 'bmp']
     timestamp = int(time.time())
     url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{code}.{ext}?v={timestamp}"
 
@@ -59,19 +59,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await photo_file.download_to_drive(photo_path)
 
         try:
-            img = Image.open(photo_path)
-            decoded_objects = decode(img)
-
-            if not decoded_objects:
-                await update.message.reply_text("Barkod/QR kod okunamadı.")
+            # ZXing ile barkod okuma
+            reader = BarCodeReader()
+            results = reader.decode(photo_path)
+            
+            if not results:
+                # Sonuç bulunamadıysa kullanıcıya bilgi ver
+                await update.message.reply_text("Barkod okunamadı. Lütfen daha net bir fotoğraf çekmeyi deneyin.")
                 return
-
-            code = decoded_objects[0].data.decode("utf-8")
+            
+            # İlk bulunan barkod değerini al
+            code = results[0]["parsed"]
+            
+            # Bulunan barkod değeriyle görsel ara
             await get_image_by_code(update, code)
 
         except Exception as e:
             logging.exception("Barkod çözümleme hatası")
-            await update.message.reply_text("Görsel işlenemedi.")
+            await update.message.reply_text("Görsel işlenemedi. Lütfen başka bir fotoğraf deneyin.")
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
