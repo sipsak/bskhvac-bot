@@ -6,8 +6,7 @@ import threading
 import aiohttp
 import time
 import os
-from PIL import Image
-import easyzxing
+import subprocess
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -47,30 +46,44 @@ async def get_image_by_code(update: Update, code: str):
 
     await update.message.reply_text("Görsel bulunamadı.")
 
+async def decode_barcode_with_zxing(image_path: str) -> str | None:
+    try:
+        result = subprocess.run(
+            ["java", "-cp", "zxing.jar", "com.google.zxing.client.j2se.CommandLineRunner", image_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=5
+        )
+        output = result.stdout.decode("utf-8")
+        lines = output.splitlines()
+        if lines:
+            return lines[0].strip()
+    except Exception as e:
+        logging.exception("ZXing çalıştırılamadı")
+    return None
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text:
         code = update.message.text.strip()
         await get_image_by_code(update, code)
 
     elif update.message.photo:
-        photo = update.message.photo[-1]
+        photo = update.message.photo[-1]  # En yüksek çözünürlüklü olanı al
         photo_file = await photo.get_file()
         photo_path = "/tmp/barkod.jpg"
         await photo_file.download_to_drive(photo_path)
 
         try:
-            reader = easyzxing.EasyZxing()
-            result = reader.decode(photo_path)
+            code = await decode_barcode_with_zxing(photo_path)
 
-            if not result or not result.text:
+            if not code:
                 await update.message.reply_text("Barkod/QR kod okunamadı.")
                 return
 
-            code = result.text.strip()
             await get_image_by_code(update, code)
 
         except Exception as e:
-            logging.exception("Barkod çözümleme hatası")
+            logging.exception("Görsel işleme hatası")
             await update.message.reply_text("Görsel işlenemedi.")
 
 if __name__ == "__main__":
