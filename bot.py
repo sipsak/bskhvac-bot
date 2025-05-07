@@ -53,7 +53,7 @@ async def decode_barcode_with_zxing(image_path):
             [
                 "java",
                 "-cp",
-                "/app/core-3.5.2.jar:/app/javase-3.5.2.jar",
+                "/app/core-3.5.2.jar:/app/javase-3.5.2.jar:/app/jcommander.jar",
                 "com.google.zxing.client.j2se.CommandLineRunner",
                 image_path
             ],
@@ -65,6 +65,15 @@ async def decode_barcode_with_zxing(image_path):
             logging.error(f"ZXing hata kodu: {result.returncode}")
             logging.error(f"ZXing stderr: {result.stderr.decode('utf-8')}")
             return None
+
+        output = result.stdout.decode("utf-8").strip()
+        logging.info(f"ZXing çıktı: {output}")
+
+        return output.splitlines()[0] if output else None
+
+    except Exception as e:
+        logging.exception("ZXing çalıştırılırken hata oluştu")
+        return None
 
         output = result.stdout.decode("utf-8").strip()
         logging.info(f"ZXing çıktı: {output}")
