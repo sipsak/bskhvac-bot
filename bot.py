@@ -102,13 +102,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await photo_file.download_to_drive(photo_path)
 
         try:
-            code = await decode_barcode_with_zxing(photo_path)
-
-            if not code:
-                await update.message.reply_text("Barkod/QR kod okunamadı.")
-                return
-
-            await get_image_by_code(update, code)
+            
+        decoded_text = await decode_barcode_with_zxing(photo_path)
+        
+        if not decoded_text:
+            await update.message.reply_text("Barkod/QR kod okunamadı.")
+            return
+            
+        code = decoded_text.strip()  # Temizle ve kodu ayıkla
+        logging.info(f"Çözümlenen ürün kodu: {code}")
+        
+        await get_image_by_code(update, code)
 
         except Exception as e:
             logging.exception("Görsel işleme hatası")
