@@ -27,15 +27,15 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=5000)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Ürün kodunu ya da barkod görselini gönder, sana görselini göndereyim.")
+    await update.message.reply_text("Ürün kodunu veya ürün barkodunun fotoğrafını gönderirsen sana ürün görselini verebilirim.")
 
 async def get_image_by_code(update: Update, code: str):
-    extensions = ['jpg', 'png', 'webp']
+    extensions = ['jpg', 'jpeg', 'png', 'webp']
     timestamp = int(time.time())
     url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{code}.{ext}?v={timestamp}"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; bskhvac-bot/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; bskhvac-bot/1.1)"
     }
 
     async with aiohttp.ClientSession(headers=headers) as session:
@@ -112,7 +112,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             decoded_text = await decode_barcode_with_zxing(photo_path)
 
             if not decoded_text:
-                await update.message.reply_text("Barkod/QR kod okunamadı.")
+                await update.message.reply_text("Barkod okunamadı, lütfen daha net bir fotoğraf çekmeyi deneyin.")
                 return
                 
             code = decoded_text.strip()  # Temizle ve kodu ayıkla
