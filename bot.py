@@ -5,13 +5,14 @@ from flask import Flask
 import threading
 import aiohttp
 import time
+import os
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-BOT_TOKEN = "7284877871:AAGJbVk84nx0USRv8g1cICiRrb4pWbWlaBI"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # Flask app for health check
 flask_app = Flask(__name__)
