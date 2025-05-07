@@ -50,7 +50,13 @@ async def get_image_by_code(update: Update, code: str):
 async def decode_barcode_with_zxing(image_path):
     try:
         result = subprocess.run(
-            ["java", "-cp", "zxing.jar", "com.google.zxing.client.j2se.CommandLineRunner", image_path],
+            [
+                "java",
+                "-cp",
+                "/app/core-3.5.2.jar:/app/javase-3.5.2.jar",
+                "com.google.zxing.client.j2se.CommandLineRunner",
+                image_path
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -63,7 +69,6 @@ async def decode_barcode_with_zxing(image_path):
         output = result.stdout.decode("utf-8").strip()
         logging.info(f"ZXing çıktı: {output}")
 
-        # İlk satırı al (kod varsa)
         return output.splitlines()[0] if output else None
 
     except Exception as e:
