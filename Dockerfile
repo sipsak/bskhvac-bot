@@ -1,18 +1,23 @@
 FROM python:3.11-slim
 
-# Gerekli sistem bağımlılıkları
+WORKDIR /app
+
+# Java kurulumu
 RUN apt-get update && \
     apt-get install -y openjdk-17-jre-headless wget && \
     apt-get clean
 
-WORKDIR /app
-
-# ZXing JAR dosyasını indir
-RUN wget https://github.com/zxing/zxing/releases/download/3.5.1/javase-3.5.1.jar -O zxing.jar
-
+# Python bağımlılıkları
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ZXing JAR dosyası
+COPY zxing.jar /app/zxing.jar
+
+# Uygulama dosyaları
 COPY . .
+
+# Port (opsiyonel)
+EXPOSE 5000
 
 CMD ["python", "bot.py"]
