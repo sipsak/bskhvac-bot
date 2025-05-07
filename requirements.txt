@@ -1,4 +1,7 @@
 python-telegram-bot==20.8
 flask
 aiohttp
-pyzxing
+pillow
+pyzbar
+opencv-python-headless
+numpy
