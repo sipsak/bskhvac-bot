@@ -9,6 +9,7 @@ import os
 import subprocess
 
 logging.basicConfig(
+    filename='/app/bot_logs.log',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
