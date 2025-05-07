@@ -11,6 +11,9 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# JCommander JAR dosyası
+COPY jcommander.jar /app/
+
 # ZXing JAR dosyası
 COPY zxing.jar /app/zxing.jar
 
