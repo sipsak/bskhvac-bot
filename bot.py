@@ -46,25 +46,28 @@ async def get_image_by_code(update: Update, code: str):
 
     await update.message.reply_text("Görsel bulunamadı.")
 
-async def decode_barcode_with_zxing(image_path: str) -> str | None:
+async def decode_barcode_with_zxing(image_path):
     try:
         result = subprocess.run(
             ["java", "-cp", "zxing.jar", "com.google.zxing.client.j2se.CommandLineRunner", image_path],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
-        
+
         if result.returncode != 0:
-        logging.error(f"ZXing hata kodu: {result.returncode}")
-        logging.error(f"stderr: {result.stderr.decode('utf-8')}")
-        
-        output = result.stdout.decode("utf-8")
-        lines = output.splitlines()
-        if lines:
-            return lines[0].strip()
+            logging.error(f"ZXing hata kodu: {result.returncode}")
+            logging.error(f"ZXing stderr: {result.stderr.decode('utf-8')}")
+            return None
+
+        output = result.stdout.decode("utf-8").strip()
+        logging.info(f"ZXing çıktı: {output}")
+
+        # İlk satırı al (kod varsa)
+        return output.splitlines()[0] if output else None
+
     except Exception as e:
-        logging.exception("ZXing çalıştırılamadı")
-    return None
+        logging.exception("ZXing çalıştırılırken hata oluştu")
+        return None
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text:
