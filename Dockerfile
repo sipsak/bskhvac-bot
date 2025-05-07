@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # JCommander JAR dosyası
-COPY jcommander.jar /app/
+COPY jcommander.jar /app/jcommander.jar
 
 # ZXing JAR dosyası
 COPY zxing.jar /app/zxing.jar
