@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY jcommander.jar /app/jcommander.jar
 
 # ZXing JAR dosyası
-COPY zxing.jar /app/zxing.jar
+COPY javase-3.5.2.jar /app/javase-3.5.2.jar
+COPY core-3.5.2.jar /app/core-3.5.2.jar
 
 # Uygulama dosyaları
 COPY . .
