@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_image_by_code(update: Update, code: str):
     extensions = ['jpg', 'jpeg', 'png', 'webp']
     timestamp = int(time.time())
-    url_with_cache_buster = lambda ext: f"https://bskhavalandirma.neocities.org/images/{code}.{ext}?v={timestamp}"
+    url_with_cache_buster = lambda ext: f"https://bskhvac.com.tr/product_images/{code}.{ext}?v={timestamp}"
 
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; bskhvac-bot/1.1)"
